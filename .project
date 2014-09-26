@@ -3,6 +3,7 @@
 	<name>proj1</name>
 	<comment></comment>
 	<projects>
+		<project>contiki</project>
 	</projects>
 	<buildSpec>
 	</buildSpec>

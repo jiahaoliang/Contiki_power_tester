@@ -1,6 +1,6 @@
 CONTIKI = ../..
 APPS = powertrace collect-view
-CONTIKI_PROJECT = udp-sender udp-sink
+CONTIKI_PROJECT = udp-sender udp-sink udp-forwarder
 PROJECT_SOURCEFILES += collect-common.c
 
 WITH_UIP6=1

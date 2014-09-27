@@ -50,6 +50,9 @@
 #define DEBUG DEBUG_PRINT
 #include "net/uip-debug.h"
 
+#include "dev/cc2420.h"
+#include "dev/leds.h"
+
 static struct uip_udp_conn *client_conn;
 static uip_ipaddr_t server_ipaddr;
 

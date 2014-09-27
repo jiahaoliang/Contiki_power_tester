@@ -4,6 +4,7 @@
 	<comment></comment>
 	<projects>
 		<project>contiki</project>
+		<project>RemoteSystemsTempFiles</project>
 	</projects>
 	<buildSpec>
 	</buildSpec>

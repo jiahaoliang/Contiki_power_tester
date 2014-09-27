@@ -52,6 +52,9 @@
 #define DEBUG DEBUG_PRINT
 #include "net/uip-debug.h"
 
+#include "dev/cc2420.h"
+#include "dev/leds.h"
+
 #define UIP_IP_BUF   ((struct uip_ip_hdr *)&uip_buf[UIP_LLH_LEN])
 
 #define UDP_CLIENT_PORT 8775
@@ -100,12 +103,16 @@ tcpip_handler(void)
   uint8_t seqno;
   uint8_t hops;
 
+  static uint16_t num_packet_received = 0;
+
   if(uip_newdata()) {
     appdata = (uint8_t *)uip_appdata;
     sender.u8[0] = UIP_IP_BUF->srcipaddr.u8[15];
     sender.u8[1] = UIP_IP_BUF->srcipaddr.u8[14];
     seqno = *appdata;
     hops = uip_ds6_if.cur_hop_limit - UIP_IP_BUF->ttl + 1;
+    printf("sender:%u.%u ",sender.u8[0] ,sender.u8[1]);
+    printf("last_rssi=%d Total num packet received:%u\n",cc2420_last_rssi-45,++num_packet_received);
     collect_common_recv(&sender, seqno, hops,
                         appdata + 2, uip_datalen() - 2);
   }

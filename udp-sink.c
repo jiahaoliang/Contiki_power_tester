@@ -112,7 +112,7 @@ tcpip_handler(void)
     seqno = *appdata;
     hops = uip_ds6_if.cur_hop_limit - UIP_IP_BUF->ttl + 1;
     printf("sender:%u.%u ",sender.u8[0] ,sender.u8[1]);
-    printf("last_rssi=%d Total num packet received:%u\n",cc2420_last_rssi-45,++num_packet_received);
+    printf("last_rssi=%d Total num packet received:%u\n",*(appdata+1),++num_packet_received);
     collect_common_recv(&sender, seqno, hops,
                         appdata + 2, uip_datalen() - 2);
   }

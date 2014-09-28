@@ -54,9 +54,11 @@
 #include "dev/cc2420.h"
 #include "dev/leds.h"
 
+#define UIP_IP_BUF   ((struct uip_ip_hdr *)&uip_buf[UIP_LLH_LEN])
+
 static struct uip_udp_conn *client_conn;
+static struct uip_udp_conn *receiver_conn;
 static uip_ipaddr_t server_ipaddr;
-static uip_ipaddr_t receiver_ipaddr;
 
 /*---------------------------------------------------------------------------*/
 PROCESS(udp_client_process, "UDP client process");
@@ -93,77 +95,93 @@ collect_common_net_print(void)
 static void
 tcpip_handler(void)
 {
+  uint8_t *appdata;
+  rimeaddr_t sender;
+  uint8_t seqno;
+  uint8_t hops;
+
+  printf("receiver's tcpip handler:\n");
+
   if(uip_newdata()) {
-    /* Ignore incoming data */
+	appdata = (uint8_t *)uip_appdata;
+	sender.u8[0] = UIP_IP_BUF->srcipaddr.u8[15];
+	sender.u8[1] = UIP_IP_BUF->srcipaddr.u8[14];
+	seqno = *appdata;
+	hops = uip_ds6_if.cur_hop_limit - UIP_IP_BUF->ttl + 1;
+	printf("sender:%u.%u ",sender.u8[0] ,sender.u8[1]);
+	printf("last_rssi=%d\n",cc2420_last_rssi-45);
+	collect_common_recv(&sender, seqno, hops,
+						appdata + 2, uip_datalen() - 2);
   }
+
+  *(appdata+1) = cc2420_last_rssi-45;	//add RSSI into the packet sending to sink
+  uip_udp_packet_sendto(client_conn, appdata, uip_datalen(),
+                        &server_ipaddr, UIP_HTONS(UDP_SERVER_PORT));
 }
 /*---------------------------------------------------------------------------*/
 void
 collect_common_send(void)
 {
-  static uint8_t seqno;
-  struct {
-    uint8_t seqno;
-    uint8_t for_alignment;
-    struct collect_view_data_msg msg;
-  } msg;
-  /* struct collect_neighbor *n; */
-  uint16_t parent_etx;
-  uint16_t rtmetric;
-  uint16_t num_neighbors;
-  uint16_t beacon_interval;
-  rpl_parent_t *preferred_parent;
-  rimeaddr_t parent;
-  rpl_dag_t *dag;
-
-  static uint16_t num_packet_sent = 0;	//number of packets already sent
-
-  if(client_conn == NULL) {
-    /* Not setup yet */
-    return;
-  }
-  memset(&msg, 0, sizeof(msg));
-  seqno++;
-  if(seqno == 0) {
-    /* Wrap to 128 to identify restarts */
-    seqno = 128;
-  }
-  msg.seqno = seqno;
-
-  rimeaddr_copy(&parent, &rimeaddr_null);
-  parent_etx = 0;
-
-  /* Let's suppose we have only one instance */
-  dag = rpl_get_any_dag();
-  if(dag != NULL) {
-    preferred_parent = dag->preferred_parent;
-    if(preferred_parent != NULL) {
-      uip_ds6_nbr_t *nbr;
-      nbr = uip_ds6_nbr_lookup(rpl_get_parent_ipaddr(preferred_parent));
-      if(nbr != NULL) {
-        /* Use parts of the IPv6 address as the parent address, in reversed byte order. */
-        parent.u8[RIMEADDR_SIZE - 1] = nbr->ipaddr.u8[sizeof(uip_ipaddr_t) - 2];
-        parent.u8[RIMEADDR_SIZE - 2] = nbr->ipaddr.u8[sizeof(uip_ipaddr_t) - 1];
-        parent_etx = rpl_get_parent_rank((rimeaddr_t *) uip_ds6_nbr_get_ll(nbr)) / 2;
-      }
-    }
-    rtmetric = dag->rank;
-    beacon_interval = (uint16_t) ((2L << dag->instance->dio_intcurrent) / 1000);
-    num_neighbors = RPL_PARENT_COUNT(dag);
-  } else {
-    rtmetric = 0;
-    beacon_interval = 0;
-    num_neighbors = 0;
-  }
-
-  /* num_neighbors = collect_neighbor_list_num(&tc.neighbor_list); */
-  printf("num_neighbors=%u, num_packet_sent=%u\n",num_neighbors, ++num_packet_sent);
-  collect_view_construct_message(&msg.msg, &parent,
-                                 parent_etx, rtmetric,
-                                 num_neighbors, beacon_interval);
-
-  uip_udp_packet_sendto(client_conn, &msg, sizeof(msg),
-                        &receiver_ipaddr, UIP_HTONS(UDP_RECEIVER_PORT));
+//  static uint8_t seqno;
+//  struct {
+//    uint8_t seqno;
+//    uint8_t for_alignment;
+//    struct collect_view_data_msg msg;
+//  } msg;
+//  /* struct collect_neighbor *n; */
+//  uint16_t parent_etx;
+//  uint16_t rtmetric;
+//  uint16_t num_neighbors;
+//  uint16_t beacon_interval;
+//  rpl_parent_t *preferred_parent;
+//  rimeaddr_t parent;
+//  rpl_dag_t *dag;
+//
+//  if(client_conn == NULL) {
+//    /* Not setup yet */
+//    return;
+//  }
+//  memset(&msg, 0, sizeof(msg));
+//  seqno++;
+//  if(seqno == 0) {
+//    /* Wrap to 128 to identify restarts */
+//    seqno = 128;
+//  }
+//  msg.seqno = seqno;
+//
+//  rimeaddr_copy(&parent, &rimeaddr_null);
+//  parent_etx = 0;
+//
+//  /* Let's suppose we have only one instance */
+//  dag = rpl_get_any_dag();
+//  if(dag != NULL) {
+//    preferred_parent = dag->preferred_parent;
+//    if(preferred_parent != NULL) {
+//      uip_ds6_nbr_t *nbr;
+//      nbr = uip_ds6_nbr_lookup(rpl_get_parent_ipaddr(preferred_parent));
+//      if(nbr != NULL) {
+//        /* Use parts of the IPv6 address as the parent address, in reversed byte order. */
+//        parent.u8[RIMEADDR_SIZE - 1] = nbr->ipaddr.u8[sizeof(uip_ipaddr_t) - 2];
+//        parent.u8[RIMEADDR_SIZE - 2] = nbr->ipaddr.u8[sizeof(uip_ipaddr_t) - 1];
+//        parent_etx = rpl_get_parent_rank((rimeaddr_t *) uip_ds6_nbr_get_ll(nbr)) / 2;
+//      }
+//    }
+//    rtmetric = dag->rank;
+//    beacon_interval = (uint16_t) ((2L << dag->instance->dio_intcurrent) / 1000);
+//    num_neighbors = RPL_PARENT_COUNT(dag);
+//  } else {
+//    rtmetric = 0;
+//    beacon_interval = 0;
+//    num_neighbors = 0;
+//  }
+//
+//  /* num_neighbors = collect_neighbor_list_num(&tc.neighbor_list); */
+//  collect_view_construct_message(&msg.msg, &parent,
+//                                 parent_etx, rtmetric,
+//                                 num_neighbors, beacon_interval);
+//
+//  uip_udp_packet_sendto(client_conn, &msg, sizeof(msg),
+//                        &server_ipaddr, UIP_HTONS(UDP_SERVER_PORT));
 }
 /*---------------------------------------------------------------------------*/
 void
@@ -203,13 +221,13 @@ set_global_address(void)
 {
   uip_ipaddr_t ipaddr;
 
-  uip_ip6addr(&ipaddr, 0xaaaa, 0, 0, 0, 0, 0, 0, 0);
-  uip_ds6_set_addr_iid(&ipaddr, &uip_lladdr);
-  uip_ds6_addr_add(&ipaddr, 0, ADDR_AUTOCONF);
+  uip_ip6addr(&ipaddr, 0xaaaa, 0, 0, 0, 0, 0, 0, 254);
+//  uip_ds6_set_addr_iid(&ipaddr, &uip_lladdr);
+  uip_ds6_addr_add(&ipaddr, 0, ADDR_MANUAL);
 
   /* set server address */
   uip_ip6addr(&server_ipaddr, 0xaaaa, 0, 0, 0, 0, 0, 0, 1);
-  uip_ip6addr(&receiver_ipaddr, 0xaaaa, 0, 0, 0, 0, 0, 0, 254);
+
 }
 /*---------------------------------------------------------------------------*/
 PROCESS_THREAD(udp_client_process, ev, data)
@@ -225,8 +243,11 @@ PROCESS_THREAD(udp_client_process, ev, data)
   print_local_addresses();
 
   /* new connection with remote host */
-  client_conn = udp_new(NULL, UIP_HTONS(UDP_RECEIVER_PORT), NULL);
+  client_conn = udp_new(NULL, UIP_HTONS(UDP_SERVER_PORT), NULL);
   udp_bind(client_conn, UIP_HTONS(UDP_CLIENT_PORT));
+
+  receiver_conn = udp_new(NULL, UIP_HTONS(UDP_CLIENT_PORT), NULL);
+  udp_bind(receiver_conn, UIP_HTONS(UDP_RECEIVER_PORT));
 
   PRINTF("Created a connection with the server ");
   PRINT6ADDR(&client_conn->ripaddr);

@@ -229,6 +229,8 @@ PROCESS_THREAD(udp_client_process, ev, data)
 
   PROCESS_PAUSE();
 
+  cc2420_set_txpower(15);	//cc2420 txpower can be set to {3,7,11,15,19,23,27,31} from lowest to highest
+
   set_global_address();
 
   PRINTF("UDP client process started\n");

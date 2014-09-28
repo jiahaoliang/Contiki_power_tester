@@ -111,7 +111,7 @@ PROCESS_THREAD(collect_common_process, ev, data)
 
   collect_common_net_init();
 
-  /* Send a packet every 60-62 seconds. */
+  /* Send a packet every 100 ms. */
   etimer_set(&period_timer, CLOCK_SECOND * PERIOD);
   while(1) {
     PROCESS_WAIT_EVENT();

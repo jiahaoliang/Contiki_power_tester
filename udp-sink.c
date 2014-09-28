@@ -101,9 +101,11 @@ tcpip_handler(void)
   uint8_t *appdata;
   rimeaddr_t sender;
   uint8_t seqno;
+  static uint8_t seqno_prev = 0;	//previous seqno, to calculate num_packet_sent from sender
   uint8_t hops;
 
   static uint16_t num_packet_received = 0;
+  static uint16_t num_packet_sent = 0;
 
   if(uip_newdata()) {
     appdata = (uint8_t *)uip_appdata;
@@ -112,9 +114,29 @@ tcpip_handler(void)
     seqno = *appdata;
     hops = uip_ds6_if.cur_hop_limit - UIP_IP_BUF->ttl + 1;
     printf("sender:%u.%u ",sender.u8[0] ,sender.u8[1]);
-    printf("last_rssi=%d Total num packet received:%u\n",(signed char)*(appdata+1),++num_packet_received);
+
+    //calculate num_packet_sent from sender
+    if(num_packet_sent == 0){	//start the counter after sink received the 1st packet
+    	num_packet_sent=1;
+    }else{
+		if(seqno_prev<seqno){
+			num_packet_sent+=seqno-seqno_prev;
+		}else{
+			//seqno reset from 255 to 128 at sender
+			num_packet_sent+=(255-seqno_prev)+(seqno-128+1);
+		}
+    }
+
+    ++num_packet_received;
+
+    printf("last_rssi=%d Total num packet received:%u num_packet sent by sender=%u\n",
+    		(signed char)*(appdata+1),
+    		num_packet_received,
+    		num_packet_sent);
     collect_common_recv(&sender, seqno, hops,
                         appdata + 2, uip_datalen() - 2);
+
+    seqno_prev=seqno;
   }
 }
 /*---------------------------------------------------------------------------*/
@@ -146,6 +168,8 @@ PROCESS_THREAD(udp_server_process, ev, data)
   PROCESS_BEGIN();
 
   PROCESS_PAUSE();
+
+  cc2420_set_txpower(3);	//cc2420 txpower can be set to {3,7,11,15,19,23,27,31} from lowest to highest
 
   SENSORS_ACTIVATE(button_sensor);
 

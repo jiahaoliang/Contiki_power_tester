@@ -113,9 +113,8 @@ tcpip_handler(void)
 	collect_common_recv(&sender, seqno, hops,
 						appdata + 2, uip_datalen() - 2);
 
-	  printf("*(appdata+1)=%d last_rssi=%d",*(appdata+1),cc2420_last_rssi-45);
 	  *(appdata+1) = (cc2420_last_rssi-45);	//add RSSI into the packet sending to sink
-	  printf("*(appdata+1)=%d\n",(signed char)*(appdata+1));
+
 	  uip_udp_packet_sendto(client_conn, appdata, uip_datalen(),
 							&server_ipaddr, UIP_HTONS(UDP_SERVER_PORT));
   }
@@ -124,66 +123,7 @@ tcpip_handler(void)
 void
 collect_common_send(void)
 {
-//  static uint8_t seqno;
-//  struct {
-//    uint8_t seqno;
-//    uint8_t for_alignment;
-//    struct collect_view_data_msg msg;
-//  } msg;
-//  /* struct collect_neighbor *n; */
-//  uint16_t parent_etx;
-//  uint16_t rtmetric;
-//  uint16_t num_neighbors;
-//  uint16_t beacon_interval;
-//  rpl_parent_t *preferred_parent;
-//  rimeaddr_t parent;
-//  rpl_dag_t *dag;
-//
-//  if(client_conn == NULL) {
-//    /* Not setup yet */
-//    return;
-//  }
-//  memset(&msg, 0, sizeof(msg));
-//  seqno++;
-//  if(seqno == 0) {
-//    /* Wrap to 128 to identify restarts */
-//    seqno = 128;
-//  }
-//  msg.seqno = seqno;
-//
-//  rimeaddr_copy(&parent, &rimeaddr_null);
-//  parent_etx = 0;
-//
-//  /* Let's suppose we have only one instance */
-//  dag = rpl_get_any_dag();
-//  if(dag != NULL) {
-//    preferred_parent = dag->preferred_parent;
-//    if(preferred_parent != NULL) {
-//      uip_ds6_nbr_t *nbr;
-//      nbr = uip_ds6_nbr_lookup(rpl_get_parent_ipaddr(preferred_parent));
-//      if(nbr != NULL) {
-//        /* Use parts of the IPv6 address as the parent address, in reversed byte order. */
-//        parent.u8[RIMEADDR_SIZE - 1] = nbr->ipaddr.u8[sizeof(uip_ipaddr_t) - 2];
-//        parent.u8[RIMEADDR_SIZE - 2] = nbr->ipaddr.u8[sizeof(uip_ipaddr_t) - 1];
-//        parent_etx = rpl_get_parent_rank((rimeaddr_t *) uip_ds6_nbr_get_ll(nbr)) / 2;
-//      }
-//    }
-//    rtmetric = dag->rank;
-//    beacon_interval = (uint16_t) ((2L << dag->instance->dio_intcurrent) / 1000);
-//    num_neighbors = RPL_PARENT_COUNT(dag);
-//  } else {
-//    rtmetric = 0;
-//    beacon_interval = 0;
-//    num_neighbors = 0;
-//  }
-//
-//  /* num_neighbors = collect_neighbor_list_num(&tc.neighbor_list); */
-//  collect_view_construct_message(&msg.msg, &parent,
-//                                 parent_etx, rtmetric,
-//                                 num_neighbors, beacon_interval);
-//
-//  uip_udp_packet_sendto(client_conn, &msg, sizeof(msg),
-//                        &server_ipaddr, UIP_HTONS(UDP_SERVER_PORT));
+
 }
 /*---------------------------------------------------------------------------*/
 void
@@ -237,6 +177,8 @@ PROCESS_THREAD(udp_client_process, ev, data)
   PROCESS_BEGIN();
 
   PROCESS_PAUSE();
+
+  cc2420_set_txpower(15);	//cc2420 txpower can be set to {3,7,11,15,19,23,27,31} from lowest to highest
 
   set_global_address();
 

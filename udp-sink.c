@@ -129,7 +129,7 @@ tcpip_handler(void)
 
     ++num_packet_received;
 
-    printf("last_rssi=%d Total num packet received:%u num_packet sent by sender=%u\n",
+    printf("last_rssi=%d Total_num_packet_received=%u num_packet_sent_by_sender=%u\n",
     		(signed char)*(appdata+1),
     		num_packet_received,
     		num_packet_sent);

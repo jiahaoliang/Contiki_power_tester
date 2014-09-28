@@ -5,11 +5,11 @@ proj1 for EE652
 
 Please put this folder under contiki/examples/ 
 
-node 1: udp-sink		---collects packets from receiver, 
-						   calculates PPR by (Total_num_packet_received)/(num_packet_sent_by_sender)
+node 1: udp-sink	---collects packets from receiver, 
+			   calculates PPR by (Total_num_packet_received)/(num_packet_sent_by_sender)
 node 2: udp-forwarder	---forwards every packet from receiver to sink
 node 3: udp-receiver	---receives packet from sender, add RSSI to that packet, then send to sink
-node 4: udp-sender		---sends packet every 100ms to receiver
+node 4: udp-sender	---sends packet every 100ms to receiver
 
 To create .sky files: make TARGET=sky
 

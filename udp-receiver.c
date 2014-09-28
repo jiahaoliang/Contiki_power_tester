@@ -112,11 +112,13 @@ tcpip_handler(void)
 	printf("last_rssi=%d\n",cc2420_last_rssi-45);
 	collect_common_recv(&sender, seqno, hops,
 						appdata + 2, uip_datalen() - 2);
-  }
 
-  *(appdata+1) = cc2420_last_rssi-45;	//add RSSI into the packet sending to sink
-  uip_udp_packet_sendto(client_conn, appdata, uip_datalen(),
-                        &server_ipaddr, UIP_HTONS(UDP_SERVER_PORT));
+	  printf("*(appdata+1)=%d last_rssi=%d",*(appdata+1),cc2420_last_rssi-45);
+	  *(appdata+1) = (cc2420_last_rssi-45);	//add RSSI into the packet sending to sink
+	  printf("*(appdata+1)=%d\n",(signed char)*(appdata+1));
+	  uip_udp_packet_sendto(client_conn, appdata, uip_datalen(),
+							&server_ipaddr, UIP_HTONS(UDP_SERVER_PORT));
+  }
 }
 /*---------------------------------------------------------------------------*/
 void

@@ -2,9 +2,17 @@ proj1
 =====
 
 proj1 for EE652
-<<<<<<< HEAD
 
 Please put this folder under contiki/examples/ 
+
+node 1: udp-sink
+node 2: udp-forwarder
+node 3: udp-receiver
+node 4: udp-sender
+
+To create .sky files: make TARGET=sky
+
+
 
 /***************************************
  * function to change TX power level
@@ -27,4 +35,4 @@ extern signed char cc2420_last_rssi;
  
 http://sourceforge.net/p/contiki/mailman/contiki-developers/thread/AD05DBDAC33146FABCDC58C57F310598@koko/
 =======
->>>>>>> refs/remotes/origin/master
+
